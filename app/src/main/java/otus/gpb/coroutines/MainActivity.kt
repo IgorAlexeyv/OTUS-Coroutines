@@ -1,8 +1,8 @@
 package otus.gpb.coroutines
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import androidx.activity.viewModels
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import otus.gpb.coroutines.databinding.ActivityMainBinding
 import otus.gpb.coroutines.databinding.ContentBinding
@@ -32,7 +32,7 @@ class MainActivity : AppCompatActivity() {
 
         viewModel.uiState.observe(this) { state ->
             when(state) {
-                MainActivityViewState.Content -> showContent()
+                is MainActivityViewState.Content -> showContent(state)
                 MainActivityViewState.Loading -> showLoading()
                 MainActivityViewState.Login -> showLogin()
             }
@@ -51,10 +51,12 @@ class MainActivity : AppCompatActivity() {
         content.contentGroup.isVisible = false
     }
 
-    private fun showContent() {
+    private fun showContent(state: MainActivityViewState.Content) {
         login.loginGroup.isVisible = false
         loading.loadingGroup.isVisible = false
         content.contentGroup.isVisible = true
+
+        content.title.title = state.name
     }
 
     private fun setupLogin() {

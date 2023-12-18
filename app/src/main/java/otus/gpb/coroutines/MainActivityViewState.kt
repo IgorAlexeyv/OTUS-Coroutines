@@ -17,5 +17,5 @@ sealed class MainActivityViewState {
     /**
      * Есть активный пользователь - показываем содержимое
      */
-    data object Content: MainActivityViewState()
+    data class Content(val name: String): MainActivityViewState()
 }

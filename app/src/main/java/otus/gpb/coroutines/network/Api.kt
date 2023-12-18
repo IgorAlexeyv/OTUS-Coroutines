@@ -11,7 +11,6 @@ import retrofit2.Call
 import retrofit2.Retrofit
 import retrofit2.http.GET
 import retrofit2.http.Header
-import retrofit2.http.Path
 import retrofit2.http.Query
 import java.util.concurrent.TimeUnit
 
@@ -27,8 +26,8 @@ interface Api {
     @GET("login")
     fun login(@Query("login") login: String, @Query("password") password: String): Call<LoginResponse>
 
-    @GET("profile/{id}")
-    fun getProfile(@Header("X-Auth-Token") token: String, @Path("id") id: Long): Call<Profile>
+    @GET("profile")
+    fun getProfile(@Header("X-Auth-Token") token: String, @Query("id") id: Long): Call<Profile>
 
     @GET("posts")
     fun getPosts(@Header("X-Auth-Token") token: String): Call<Post>
