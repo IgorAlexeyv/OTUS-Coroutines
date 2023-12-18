@@ -5,7 +5,10 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import otus.gpb.coroutines.network.Api
+import otus.gpb.coroutines.network.data.LoginResponse
 import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 /**
  * Модель основной активити
@@ -40,15 +43,17 @@ class MainActivityViewModel : ViewModel() {
         Log.i(TAG, "Logging in $name...")
         mUiState.value = MainActivityViewState.Loading
         call = service.login(name, password).apply {
-            try {
-                val response = execute()
+            enqueue(object : Callback<LoginResponse>{
+                override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {
+                    Log.i(TAG, "Successfully logged-in user with id: ${response.body()?.id}")
+                    mUiState.value = MainActivityViewState.Content
+                }
 
-                Log.i(TAG, "Successfully logged-in user with id: ${response.body()?.id}")
-                mUiState.value = MainActivityViewState.Content
-            } catch (e: Throwable) {
-                Log.w(TAG, "Login error", e)
-                mUiState.value = MainActivityViewState.Login
-            }
+                override fun onFailure(call: Call<LoginResponse>, t: Throwable) {
+                    Log.w(TAG, "Login error", t)
+                    mUiState.value = MainActivityViewState.Login
+                }
+            })
         }
     }
 
