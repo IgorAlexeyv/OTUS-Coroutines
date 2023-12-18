@@ -4,12 +4,10 @@ import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.launch
 import otus.gpb.coroutines.network.Api
-import otus.gpb.coroutines.network.data.LoginResponse
-import otus.gpb.coroutines.network.data.Profile
 import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
 
 /**
  * Модель основной активити
@@ -41,46 +39,33 @@ class MainActivityViewModel : ViewModel() {
      * Логин пользователя
      */
     fun login(name: String, password: String) {
-        Log.i(TAG, "Logging in $name...")
-        mUiState.value = MainActivityViewState.Loading
-        this.call = service.login(name, password).apply {
-            enqueue(object : Callback<LoginResponse>{
-                override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {
-                    val loginResponse = response.body()
-                    if (null == loginResponse) {
-                        Log.w(TAG, "Empty response!")
-                        mUiState.value = MainActivityViewState.Login
-                        return
-                    }
-                    Log.i(TAG, "Successfully logged-in user with id: ${loginResponse.id}")
+        viewModelScope.launch {
+            Log.i(TAG, "Logging in $name...")
+            try {
+                Log.i(TAG, "When loading done, I'm on a thread: ${Thread.currentThread().name}")
 
-                    this@MainActivityViewModel.call = service.getProfile(loginResponse.token, loginResponse.id).apply {
-                        enqueue(object : Callback<Profile> {
-                            override fun onResponse(call: Call<Profile>, response: Response<Profile>) {
-                                val profile = response.body()
-                                if (null == profile) {
-                                    Log.w(TAG, "No profile!")
-                                    mUiState.value = MainActivityViewState.Login
-                                    return
-                                }
+                val loginCall = service.login(name, password).execute()
+                val loginResponse = loginCall.body()
+                if (null == loginResponse) {
+                    Log.w(TAG, "Empty login response")
+                    throw NoSuchElementException("No login response")
+                }
+                Log.i(TAG, "Successfully logged-in user with id: ${loginResponse.id}")
 
-                                Log.i(TAG, "Successfully loaded profile for: ${profile.name}")
-                                mUiState.value = MainActivityViewState.Content(profile.name)
-                            }
-
-                            override fun onFailure(call: Call<Profile>, t: Throwable) {
-                                Log.w(TAG, "Profile load error", t)
-                                mUiState.value = MainActivityViewState.Login
-                            }
-                        })
-                    }
+                val profileCall = service.getProfile(loginResponse.token, loginResponse.id).execute()
+                val profileResponse = profileCall.body()
+                if (null == profileResponse) {
+                    Log.w(TAG, "Empty profile response")
+                    throw NoSuchElementException("No login response")
                 }
 
-                override fun onFailure(call: Call<LoginResponse>, t: Throwable) {
-                    Log.w(TAG, "Login error", t)
-                    mUiState.value = MainActivityViewState.Login
-                }
-            })
+                Log.i(TAG, "When loading, I'm on a thread: ${Thread.currentThread().name}")
+                Log.i(TAG, "Successfully loaded profile for: ${profileResponse.name}")
+                mUiState.value = MainActivityViewState.Content(profileResponse.name)
+            } catch (t: Throwable) {
+                Log.w(TAG, "Login error", t)
+                mUiState.value = MainActivityViewState.Login
+            }
         }
     }
 
@@ -89,13 +74,6 @@ class MainActivityViewModel : ViewModel() {
      */
     fun logout() {
         mUiState.value = MainActivityViewState.Login
-    }
-
-    /**
-     * Вызывается, когда модель больше не нужна
-     */
-    override fun onCleared() {
-        call?.cancel()
     }
 
     companion object {
