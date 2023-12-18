@@ -5,7 +5,9 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import otus.gpb.coroutines.network.Api
 import retrofit2.Call
 
@@ -42,26 +44,29 @@ class MainActivityViewModel : ViewModel() {
         viewModelScope.launch {
             Log.i(TAG, "Logging in $name...")
             try {
+                val profile = withContext(Dispatchers.IO) {
+                    Log.i(TAG, "When loading done, I'm on a thread: ${Thread.currentThread().name}")
+
+                    val loginCall = service.login(name, password).execute()
+                    val loginResponse = loginCall.body()
+                    if (null == loginResponse) {
+                        Log.w(TAG, "Empty login response")
+                        throw NoSuchElementException("No login response")
+                    }
+                    Log.i(TAG, "Successfully logged-in user with id: ${loginResponse.id}")
+
+                    val profileCall = service.getProfile(loginResponse.token, loginResponse.id).execute()
+                    val profileResponse = profileCall.body()
+                    if (null == profileResponse) {
+                        Log.w(TAG, "Empty profile response")
+                        throw NoSuchElementException("No login response")
+                    }
+                    return@withContext profileResponse
+                }
+
                 Log.i(TAG, "When loading done, I'm on a thread: ${Thread.currentThread().name}")
-
-                val loginCall = service.login(name, password).execute()
-                val loginResponse = loginCall.body()
-                if (null == loginResponse) {
-                    Log.w(TAG, "Empty login response")
-                    throw NoSuchElementException("No login response")
-                }
-                Log.i(TAG, "Successfully logged-in user with id: ${loginResponse.id}")
-
-                val profileCall = service.getProfile(loginResponse.token, loginResponse.id).execute()
-                val profileResponse = profileCall.body()
-                if (null == profileResponse) {
-                    Log.w(TAG, "Empty profile response")
-                    throw NoSuchElementException("No login response")
-                }
-
-                Log.i(TAG, "When loading, I'm on a thread: ${Thread.currentThread().name}")
-                Log.i(TAG, "Successfully loaded profile for: ${profileResponse.name}")
-                mUiState.value = MainActivityViewState.Content(profileResponse.name)
+                Log.i(TAG, "Successfully loaded profile for: ${profile.name}")
+                mUiState.value = MainActivityViewState.Content(profile.name)
             } catch (t: Throwable) {
                 Log.w(TAG, "Login error", t)
                 mUiState.value = MainActivityViewState.Login
