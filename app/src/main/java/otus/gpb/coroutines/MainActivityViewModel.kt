@@ -9,7 +9,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import otus.gpb.coroutines.network.Api
-import retrofit2.Call
+import otus.gpb.coroutines.network.networkCall
 
 /**
  * Модель основной активити
@@ -33,39 +33,26 @@ class MainActivityViewModel : ViewModel() {
     val uiState: LiveData<MainActivityViewState> get() = mUiState
 
     /**
-     * Текущий запрос к серверу
-     */
-    private var call: Call<*>? = null;
-
-    /**
      * Логин пользователя
      */
     fun login(name: String, password: String) {
         viewModelScope.launch {
             Log.i(TAG, "Logging in $name...")
+            mUiState.value = MainActivityViewState.Loading
             try {
                 val profile = withContext(Dispatchers.IO) {
                     Log.i(TAG, "When loading done, I'm on a thread: ${Thread.currentThread().name}")
 
-                    val loginCall = service.login(name, password).execute()
-                    val loginResponse = loginCall.body()
-                    if (null == loginResponse) {
-                        Log.w(TAG, "Empty login response")
-                        throw NoSuchElementException("No login response")
-                    }
+                    val loginResponse = networkCall { service.login(name, password) }
                     Log.i(TAG, "Successfully logged-in user with id: ${loginResponse.id}")
 
-                    val profileCall = service.getProfile(loginResponse.token, loginResponse.id).execute()
-                    val profileResponse = profileCall.body()
-                    if (null == profileResponse) {
-                        Log.w(TAG, "Empty profile response")
-                        throw NoSuchElementException("No login response")
-                    }
+                    val profileResponse = networkCall { service.getProfile(loginResponse.token, loginResponse.id) }
+                    Log.i(TAG, "Successfully loaded profile for: ${profileResponse.name}")
+
                     return@withContext profileResponse
                 }
 
                 Log.i(TAG, "When loading done, I'm on a thread: ${Thread.currentThread().name}")
-                Log.i(TAG, "Successfully loaded profile for: ${profile.name}")
                 mUiState.value = MainActivityViewState.Content(profile.name)
             } catch (t: Throwable) {
                 Log.w(TAG, "Login error", t)
