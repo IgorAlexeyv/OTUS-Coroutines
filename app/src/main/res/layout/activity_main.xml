@@ -6,13 +6,8 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Hello World!"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+    <include android:id="@+id/login_screen" layout="@layout/login"/>
+    <include android:id="@+id/loading_screen" layout="@layout/loading"/>
+    <include android:id="@+id/content_screen" layout="@layout/content"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
