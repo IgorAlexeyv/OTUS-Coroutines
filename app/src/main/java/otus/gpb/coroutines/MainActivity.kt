@@ -57,6 +57,7 @@ class MainActivity : AppCompatActivity() {
         content.contentGroup.isVisible = true
 
         content.title.title = state.name
+        content.name.text = state.name
     }
 
     private fun setupLogin() {
