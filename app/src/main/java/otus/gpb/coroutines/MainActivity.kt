@@ -4,6 +4,10 @@ import android.os.Bundle
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.launch
 import otus.gpb.coroutines.databinding.ActivityMainBinding
 import otus.gpb.coroutines.databinding.ContentBinding
 import otus.gpb.coroutines.databinding.LoadingBinding
@@ -15,7 +19,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var loading: LoadingBinding
     private lateinit var content: ContentBinding
 
-    private val viewModel: MainActivityViewModel by viewModels()
+    private val viewModel: MainActivityViewModel by viewModels {
+        MainActivityViewModel.Factory(application)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,11 +36,15 @@ class MainActivity : AppCompatActivity() {
         setupLoading()
         setupContent()
 
-        viewModel.uiState.observe(this) { state ->
-            when(state) {
-                is MainActivityViewState.Content -> showContent(state)
-                MainActivityViewState.Loading -> showLoading()
-                MainActivityViewState.Login -> showLogin()
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.uiState.collect {
+                    when(it) {
+                        is MainActivityViewState.Content -> showContent(it)
+                        MainActivityViewState.Loading -> showLoading()
+                        MainActivityViewState.Login -> showLogin()
+                    }
+                }
             }
         }
     }
