@@ -9,7 +9,7 @@
         android:id="@+id/content_group"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:constraint_referenced_ids="appbar_layout,name"/>
+        app:constraint_referenced_ids="appbar_layout,postsFragment"/>
 
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/appbar_layout"
@@ -29,15 +29,14 @@
 
     </com.google.android.material.appbar.AppBarLayout>
 
-    <TextView
-        android:id="@+id/name"
-        android:textSize="32sp"
-        android:layout_width="wrap_content"
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/postsFragment"
+        android:name="otus.gpb.coroutines.PostsFragment"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/appbar_layout"
-        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        tool:text="Vasya"/>
+        app:layout_constraintTop_toBottomOf="@id/appbar_layout"
+        app:layout_constraintBottom_toBottomOf="parent"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
