@@ -30,7 +30,7 @@ interface Api {
     fun getProfile(@Header("X-Auth-Token") token: String, @Query("id") id: Long): Call<Profile>
 
     @GET("posts")
-    fun getPosts(@Header("X-Auth-Token") token: String): Call<Post>
+    fun getPosts(@Header("X-Auth-Token") token: String): Call<List<Post>>
 
     companion object {
         /**

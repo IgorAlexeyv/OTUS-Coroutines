@@ -6,13 +6,19 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.divider.MaterialDividerItemDecoration
+import kotlinx.coroutines.launch
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import otus.gpb.coroutines.business.data.LceState
 import otus.gpb.coroutines.databinding.FragmentPostsBinding
 import otus.gpb.coroutines.databinding.VhPostBinding
 import otus.gpb.coroutines.network.data.Post
@@ -21,12 +27,15 @@ class PostsFragment : Fragment() {
 
     private var binding: FragmentPostsBinding? = null
     private val adapter = PostsAdapter()
+    private val viewModel: PostsFragmentViewModel by viewModels {
+        PostsFragmentViewModel.Factory(requireActivity().application)
+    }
 
     private inline fun withBinding(block: FragmentPostsBinding.() -> Unit) {
         checkNotNull(binding).block()
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         binding = FragmentPostsBinding.inflate(inflater, container, false)
         return binding!!.root
     }
@@ -40,6 +49,21 @@ class PostsFragment : Fragment() {
                 MaterialDividerItemDecoration.VERTICAL
             )
         )
+
+        lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.uiState.collect {
+                    adapter.submitList(it.data.orEmpty())
+                    withBinding {
+                        when(it) {
+                            is LceState.Content -> status.text = "Content"
+                            is LceState.Error -> status.text = "Error: ${it.error.message}"
+                            is LceState.Loading -> status.text = "Loading..."
+                        }
+                    }
+                }
+            }
+        }
     }
 
     override fun onDestroyView() {
